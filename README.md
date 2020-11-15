@@ -11,4 +11,4 @@ This requires the MinGW version of **CodeBlocks 20.03 or newer** to be installed
 
 # Screenshots
 
-![](../master/original_images/screenshot.png)
+![](./original_images/Screenshot.png)
