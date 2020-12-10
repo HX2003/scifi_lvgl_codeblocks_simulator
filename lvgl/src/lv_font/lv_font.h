@@ -250,6 +250,8 @@ LV_FONT_DECLARE(lv_font_eurostyle_normal_18)
 
 LV_FONT_DECLARE(lv_font_eurostyle_bold_18)
 
+LV_FONT_DECLARE(lv_font_eurostyle_bold_26)
+
 LV_FONT_DECLARE(lv_font_eurostyle_bold_50)
 
 LV_FONT_DECLARE(lv_font_eurostyle_bold_100)
