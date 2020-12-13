@@ -25,11 +25,15 @@
 /**********************
  *      TYPEDEFS
  **********************/
+typedef enum light_mode{
+	LIGHT_MODE_OFF,
+	LIGHT_MODE_TEMP,
+	LIGHT_MODE_COLOR
+} light_mode_t;
 
 /**********************
  *  STATIC PROTOTYPES
  **********************/
-
 static lv_obj_t * add_loader(void (*end_cb)(lv_anim_t *));
 static void loader_anim_cb(void * arc, lv_anim_value_t v);
 LV_IMG_DECLARE(light_active_64px);
@@ -38,24 +42,41 @@ LV_IMG_DECLARE(light_switch_36px);
 LV_IMG_DECLARE(switch_36px);
 LV_IMG_DECLARE(up_96px);
 LV_IMG_DECLARE(down_96px);
+LV_IMG_DECLARE(color_wheel_64px);
+LV_IMG_DECLARE(color_wheel_temp_64px);
+LV_IMG_DECLARE(color_wheel_off_64px);
 LV_EVENT_CB_DECLARE(light_event_cb);
 LV_EVENT_CB_DECLARE(light_color_event_cb);
+LV_EVENT_CB_DECLARE(light_mode_off_event_cb);
+LV_EVENT_CB_DECLARE(light_mode_color_event_cb);
+LV_EVENT_CB_DECLARE(light_mode_temp_event_cb);
+LV_EVENT_CB_DECLARE(light_temp_temperature_event_cb);
+LV_EVENT_CB_DECLARE(light_temp_brightness_event_cb);
 static void reflow_oven_anim_bg(uint32_t delay, lv_color_t color, int32_t y_new);
 static void reflow_oven_anim_out(lv_obj_t * obj, uint32_t delay);
 static void reflow_oven_anim_out_all(lv_obj_t * obj, uint32_t delay);
 static void reflow_oven_anim_in(lv_obj_t * obj, uint32_t delay);
-
+static void lights_on();
+static void lights_off();
 /**********************
  *  STATIC VARIABLES
  **********************/
 static bool error_state = false;
-static bool lights_on = false;
-static lv_color_t lights_main_color = LV_COLOR_WHITE;
+static light_mode_t light_mode_var = LIGHT_MODE_OFF;
+static lv_color_t lights_main_color;
 static lv_cpicker_color_mode_t cpicker_color_mode = LV_CPICKER_COLOR_MODE_HUE;
 static lv_group_t * g;
 
 static lv_obj_t * lights[6];
 static lv_obj_t * cpicker_mode_label;
+static lv_obj_t * light_mode_off_tab;
+static lv_obj_t * light_mode_temp_tab;
+static lv_obj_t * light_mode_color_tab;
+
+static uint16_t light_hue = 0;
+static uint8_t light_sat = 0;
+static uint8_t light_brightness = 0;
+static uint8_t light_temperature = 0;
 
 static char * cpicker_mode_txt[] = {
     "HUE",
@@ -79,6 +100,8 @@ void reflow_oven_ui(void)
     lv_obj_t * scr = lv_obj_create(NULL, NULL);
     lv_obj_set_style_local_bg_color(scr, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_BLACK);
     lv_scr_load(scr);
+
+    lights_main_color = LV_COLOR_WHITE;
 
     static lv_style_t style_font_title;
     lv_style_init(&style_font_title);
@@ -130,18 +153,21 @@ void reflow_oven_ui(void)
     lv_obj_align(line1, NULL, LV_ALIGN_IN_TOP_LEFT, 4, 40);
 
     ///////////
+    static lv_style_t style_font_0;
+    lv_style_init(&style_font_0);
+    lv_style_set_text_font(&style_font_0, LV_STATE_DEFAULT, &lv_font_eurostyle_bold_18);
+    lv_style_set_text_color(&style_font_0, LV_STATE_DEFAULT, lv_color_hex(0xd9e6ff));
+
     static lv_style_t style_font_1;
     lv_style_init(&style_font_1);
-    lv_style_set_text_font(&style_font_1, LV_STATE_DEFAULT, &lv_font_eurostyle_bold_18);
+    lv_style_set_text_font(&style_font_1, LV_STATE_DEFAULT, &lv_font_eurostyle_bold_26);
     lv_style_set_text_color(&style_font_1, LV_STATE_DEFAULT, lv_color_hex(0xd9e6ff));
-    //lv_style_set_bg_color(&style_font_1, LV_STATE_DEFAULT, LV_COLOR_GREEN);
-    //lv_style_set_bg_opa(&style_font_1, LV_STATE_DEFAULT, LV_OPA_COVER);
 
     lv_obj_t * label1 = lv_label_create(lv_scr_act(), NULL);
     lv_obj_align(label1, NULL, LV_ALIGN_IN_TOP_LEFT, 655, 4);
     lv_label_set_long_mode(label1, LV_LABEL_LONG_SROLL_CIRC);
     lv_obj_set_size(label1, 64, 20);
-    lv_obj_add_style(label1, LV_LABEL_PART_MAIN, &style_font_1);
+    lv_obj_add_style(label1, LV_LABEL_PART_MAIN, &style_font_0);
     lv_label_set_align(label1, LV_LABEL_ALIGN_CENTER);
     lv_label_set_text(label1, "12:43");
     ///////////
@@ -199,9 +225,10 @@ void reflow_oven_ui(void)
 
     lv_obj_t *tabview;
     tabview = lv_tabview_create(lv_scr_act(), NULL);
+    lv_tabview_set_anim_time(tabview, 0);
     lv_obj_set_height(tabview, lv_obj_get_height(lv_scr_act()) - 40);
     lv_obj_align(tabview, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 40);
-    lv_obj_set_style_local_pad_right(tabview, LV_TABVIEW_PART_TAB_BG, LV_STATE_DEFAULT, 650);
+    lv_obj_set_style_local_pad_right(tabview, LV_TABVIEW_PART_TAB_BG, LV_STATE_DEFAULT, 550);
     lv_obj_set_style_local_pad_left(tabview, LV_TABVIEW_PART_TAB_BG, LV_STATE_DEFAULT, 5);
     lv_obj_add_style(tabview, LV_TABVIEW_PART_TAB_BTN, &style_font_1);
     lv_obj_add_style(tabview, LV_TABVIEW_PART_INDIC, &style_tabview_indicator);
@@ -212,6 +239,24 @@ void reflow_oven_ui(void)
 
    /*Create a window*/
     lv_obj_t * win = scifi_cont_create(tab1);
+
+    lv_obj_t * mode_img_btn = lv_img_create(win, NULL);
+    lv_img_set_src(mode_img_btn, &color_wheel_off_64px);
+    lv_obj_align(mode_img_btn, NULL, LV_ALIGN_IN_TOP_LEFT, 590, 30);
+    lv_obj_set_click(mode_img_btn, true);
+    lv_obj_set_event_cb(mode_img_btn, light_mode_off_event_cb);
+
+    mode_img_btn = lv_img_create(win, NULL);
+    lv_img_set_src(mode_img_btn, &color_wheel_temp_64px);
+    lv_obj_align(mode_img_btn, NULL, LV_ALIGN_IN_TOP_LEFT, 670, 30);
+    lv_obj_set_click(mode_img_btn, true);
+    lv_obj_set_event_cb(mode_img_btn, light_mode_temp_event_cb);
+
+    mode_img_btn = lv_img_create(win, NULL);
+    lv_img_set_src(mode_img_btn, &color_wheel_64px);
+    lv_obj_align(mode_img_btn, NULL, LV_ALIGN_IN_TOP_LEFT, 750, 30);
+    lv_obj_set_click(mode_img_btn, true);
+    lv_obj_set_event_cb(mode_img_btn, light_mode_color_event_cb);
 
     const lv_point_t lights_pts[] = {{50, 90}, {250, 90},  {450, 90},
                                 {50, 240}, {250, 240}, {450, 240}};
@@ -281,35 +326,64 @@ void reflow_oven_ui(void)
 
     static const char * btnm_map[] = {"OFF", "ON", ""};
 
-    lv_obj_t * btnm1 = lv_btnmatrix_create(win, NULL);
-    lv_obj_set_size(btnm1, 200, 30);
-    lv_btnmatrix_set_map(btnm1, btnm_map);
-    lv_btnmatrix_set_one_check(btnm1, true);
-    lv_btnmatrix_set_btn_ctrl(btnm1, 0, LV_BTNMATRIX_CTRL_CHECKABLE|LV_BTNMATRIX_CTRL_CHECK_STATE|LV_BTNMATRIX_CTRL_CLICK_TRIG|LV_BTNMATRIX_CTRL_NO_REPEAT);
-    lv_btnmatrix_set_btn_ctrl(btnm1, 1, LV_BTNMATRIX_CTRL_CHECKABLE|LV_BTNMATRIX_CTRL_CLICK_TRIG|LV_BTNMATRIX_CTRL_NO_REPEAT);
-    lv_obj_align(btnm1, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 20);
-    lv_obj_set_event_cb(btnm1, light_event_cb);
-
     lv_obj_t * txt = lv_label_create(win, NULL);
     lv_obj_add_style(txt, LV_LABEL_PART_MAIN, &style_font_2);
     lv_obj_align(txt, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 0);
     lv_label_set_text(txt, "All light groups");
 
-    lv_obj_t * cpicker;
 
-    cpicker = lv_cpicker_create(win, NULL);
-    lv_obj_set_size(cpicker, 200, 200);
-    lv_obj_align(cpicker, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 100);
-    lv_obj_set_event_cb(cpicker, light_color_event_cb);
+    light_mode_off_tab = lv_obj_create(win, NULL);
+    lv_obj_align(light_mode_off_tab, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 150);
+    lv_obj_set_size(light_mode_off_tab, 200, 200);
+    lv_obj_set_hidden(light_mode_off_tab, false);
 
-    lv_obj_t * img2 = lv_img_create(win, NULL);
+    light_mode_temp_tab = lv_obj_create(win, NULL);
+    lv_obj_align(light_mode_temp_tab, NULL, LV_ALIGN_IN_TOP_LEFT, 590, 100);
+    lv_obj_set_size(light_mode_temp_tab, 220, 200);
+    lv_obj_set_hidden(light_mode_temp_tab, true);
+
+    txt = lv_label_create(light_mode_temp_tab, NULL);
+    lv_obj_add_style(txt, LV_LABEL_PART_MAIN, &style_font_2);
+    lv_obj_align(txt, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 50);
+    lv_label_set_text(txt, "Color Temperature");
+
+    lv_obj_t * slider = lv_slider_create(light_mode_temp_tab, NULL);
+    lv_obj_set_size(slider, 190, 15);
+    lv_obj_align(slider, NULL, LV_ALIGN_IN_TOP_LEFT, 15, 80);
+    lv_obj_set_event_cb(slider, light_temp_temperature_event_cb);
+    lv_slider_set_range(slider, 0, 255);
+
+    txt = lv_label_create(light_mode_temp_tab, NULL);
+    lv_obj_add_style(txt, LV_LABEL_PART_MAIN, &style_font_2);
+    lv_obj_align(txt, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 150);
+    lv_label_set_text(txt, "Brightness");
+
+    slider = lv_slider_create(light_mode_temp_tab, NULL);
+    lv_obj_set_size(slider, 190, 15);
+    lv_obj_align(slider, NULL, LV_ALIGN_IN_TOP_LEFT, 15, 180);
+    lv_slider_set_range(slider, 0, 255);
+    lv_obj_set_event_cb(slider, light_temp_brightness_event_cb);
+
+    light_mode_color_tab = lv_obj_create(win, NULL);
+    lv_obj_align(light_mode_color_tab, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 150);
+    lv_obj_set_size(light_mode_color_tab, 200, 200);
+    lv_obj_set_hidden(light_mode_color_tab, true);
+
+    lv_obj_t * cpicker_color = lv_cpicker_create(light_mode_color_tab, NULL);
+    lv_obj_set_size(cpicker_color, 200, 200);
+    lv_obj_align(cpicker_color, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
+    lv_obj_set_event_cb(cpicker_color, light_color_event_cb);
+
+    lv_obj_t * img2 = lv_img_create(light_mode_color_tab, NULL);
     lv_img_set_src(img2, &switch_36px);
-    lv_obj_align(img2, NULL, LV_ALIGN_IN_TOP_LEFT, 682, 182);
+    lv_obj_align(img2, NULL, LV_ALIGN_IN_TOP_LEFT, 82, 82);
 
-    cpicker_mode_label = lv_label_create(win, NULL);
+    cpicker_mode_label = lv_label_create(light_mode_color_tab, NULL);
     lv_obj_add_style(cpicker_mode_label, LV_LABEL_PART_MAIN, &style_font_2);
-    lv_obj_align(cpicker_mode_label, NULL, LV_ALIGN_IN_TOP_LEFT, 600, 100);
+    lv_obj_align(cpicker_mode_label, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 0);
     lv_label_set_text(cpicker_mode_label, cpicker_mode_txt[(uint8_t )cpicker_color_mode]);
+
+
 
     /////////////////////////////////
     lv_obj_t * win_climate = scifi_cont_create(tab2);
@@ -352,13 +426,14 @@ void reflow_oven_ui(void)
     lv_label_set_align(fan, LV_LABEL_ALIGN_CENTER);
     lv_obj_align(fan, NULL, LV_ALIGN_IN_TOP_LEFT, 690, 0);
 
-    btnm1 = lv_btnmatrix_create(win_climate, NULL);
+    lv_obj_t * btnm1 = lv_btnmatrix_create(win_climate, NULL);
     lv_obj_set_size(btnm1, 200, 30);
     lv_btnmatrix_set_map(btnm1, btnm_map);
     lv_btnmatrix_set_one_check(btnm1, true);
     lv_btnmatrix_set_btn_ctrl(btnm1, 0, LV_BTNMATRIX_CTRL_CHECKABLE|LV_BTNMATRIX_CTRL_CHECK_STATE|LV_BTNMATRIX_CTRL_CLICK_TRIG|LV_BTNMATRIX_CTRL_NO_REPEAT);
     lv_btnmatrix_set_btn_ctrl(btnm1, 1, LV_BTNMATRIX_CTRL_CHECKABLE|LV_BTNMATRIX_CTRL_CLICK_TRIG|LV_BTNMATRIX_CTRL_NO_REPEAT);
     lv_obj_align(btnm1, NULL, LV_ALIGN_IN_TOP_LEFT, 300, 20);
+    lv_obj_set_event_cb(btnm1, light_event_cb);
 
     btnm1 = lv_btnmatrix_create(win_climate, NULL);
     lv_obj_set_size(btnm1, 200, 30);
@@ -425,6 +500,22 @@ void reflow_oven_ui(void)
     lv_obj_set_click(fan_down, true);
 }
 
+static void light_temp_temperature_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_VALUE_CHANGED) {
+        light_temperature = lv_slider_get_value(obj);
+        lights_on();
+    }
+}
+
+static void light_temp_brightness_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_VALUE_CHANGED) {
+        light_brightness = lv_slider_get_value(obj);
+        lights_on();
+    }
+}
+
 static void light_event_cb(lv_obj_t * obj, lv_event_t event)
 {
     if(event == LV_EVENT_VALUE_CHANGED) {
@@ -433,20 +524,33 @@ static void light_event_cb(lv_obj_t * obj, lv_event_t event)
         if(btn_id == 0){
             lv_obj_set_style_local_bg_color(obj, LV_BTNMATRIX_PART_BTN, LV_STATE_CHECKED, lv_color_hex(0xf00000));
             lv_obj_set_style_local_bg_color(obj, LV_BTNMATRIX_PART_BTN, LV_STATE_PRESSED|LV_STATE_CHECKED, lv_color_hex(0xf00000));
-            for(int i=0; i<6; i++){
-                lv_img_set_src(lights[i], &light_inactive_64px);
-                lv_obj_set_style_local_image_recolor(lights[i], LV_IMG_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0x5f697d));
-            }
-            lights_on = false;
         }else{
             lv_obj_set_style_local_bg_color(obj, LV_BTNMATRIX_PART_BTN, LV_STATE_CHECKED, lv_color_hex(0x00d620));
             lv_obj_set_style_local_bg_color(obj, LV_BTNMATRIX_PART_BTN, LV_STATE_PRESSED|LV_STATE_CHECKED, lv_color_hex(0x00d620));
-            for(int i=0; i<6; i++){
-                lv_img_set_src(lights[i], &light_active_64px);
-                lv_obj_set_style_local_image_recolor(lights[i], LV_IMG_PART_MAIN, LV_STATE_DEFAULT, lights_main_color);
-            }
-            lights_on = true;
         }
+    }
+}
+
+static void lights_on(){
+    lv_color_t light_color;
+
+    if(light_mode_var==LIGHT_MODE_TEMP){
+        lv_color_t mixed_color = lv_color_mix(lv_color_hex(0xFF7A08), lv_color_hex(0xFFFFFF), light_temperature);
+        light_color = lv_color_darken(mixed_color, (255 - light_brightness)*0.8);
+    }else if(light_mode_var==LIGHT_MODE_COLOR){
+        light_color = lights_main_color;
+    }
+
+    for(int i=0; i<6; i++){
+        lv_img_set_src(lights[i], &light_active_64px);
+        lv_obj_set_style_local_image_recolor(lights[i], LV_IMG_PART_MAIN, LV_STATE_DEFAULT, light_color);
+    };
+}
+
+static void lights_off(){
+    for(int i=0; i<6; i++){
+        lv_img_set_src(lights[i], &light_inactive_64px);
+        lv_obj_set_style_local_image_recolor(lights[i], LV_IMG_PART_MAIN, LV_STATE_DEFAULT, lv_color_hex(0x5f697d));
     }
 }
 
@@ -454,14 +558,55 @@ static void light_color_event_cb(lv_obj_t * obj, lv_event_t event)
 {
     if(event == LV_EVENT_VALUE_CHANGED) {
         lights_main_color = lv_cpicker_get_color(obj);
-        if(lights_on){
-            for(int i=0; i<6; i++){
-            lv_obj_set_style_local_image_recolor(lights[i], LV_IMG_PART_MAIN, LV_STATE_DEFAULT, lights_main_color);
-            }
+        light_hue = lv_cpicker_get_hue(obj);
+        light_sat = lv_cpicker_get_saturation(obj);
+        light_brightness = lv_cpicker_get_value(obj);
+
+        if(light_mode_var!=LIGHT_MODE_OFF){
+            lights_on();
         }
 
         cpicker_color_mode = lv_cpicker_get_color_mode(obj);
         lv_label_set_text(cpicker_mode_label, cpicker_mode_txt[(uint8_t )cpicker_color_mode]);
+    }
+}
+
+static void light_mode_off_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_CLICKED) {
+        if(light_mode_var!=LIGHT_MODE_OFF){
+            light_mode_var = LIGHT_MODE_OFF;
+            lv_obj_set_hidden(light_mode_off_tab, false);
+            lv_obj_set_hidden(light_mode_temp_tab, true);
+            lv_obj_set_hidden(light_mode_color_tab, true);
+            lights_off();
+        }
+    }
+}
+
+static void light_mode_temp_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_CLICKED) {
+        if(light_mode_var!=LIGHT_MODE_TEMP){
+            light_mode_var = LIGHT_MODE_TEMP;
+            lv_obj_set_hidden(light_mode_off_tab, true);
+            lv_obj_set_hidden(light_mode_temp_tab, false);
+            lv_obj_set_hidden(light_mode_color_tab, true);
+            lights_on();
+        }
+    }
+}
+
+static void light_mode_color_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    if(event == LV_EVENT_CLICKED) {
+        if(light_mode_var!=LIGHT_MODE_COLOR){
+            light_mode_var = LIGHT_MODE_COLOR;
+            lv_obj_set_hidden(light_mode_off_tab, true);
+            lv_obj_set_hidden(light_mode_temp_tab, true);
+            lv_obj_set_hidden(light_mode_color_tab, false);
+            lights_on();
+        }
     }
 }
 static lv_obj_t * add_loader(void (*end_cb)(lv_anim_t *))
@@ -503,7 +648,7 @@ LV_EVENT_CB_DECLARE(icon_generic_event_cb)
         lv_anim_set_time(&a, 100);
         lv_anim_set_var(&a, label);
         lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
-        lv_coord_t initial_y = lv_obj_get_user_data(label);
+        lv_coord_t initial_y = (lv_coord_t)lv_obj_get_user_data(label);
         lv_anim_set_values(&a, initial_y, initial_y-5);
         lv_anim_start(&a);
         lv_anim_t a1;
@@ -523,7 +668,7 @@ LV_EVENT_CB_DECLARE(icon_generic_event_cb)
         lv_anim_set_time(&a, 100);
         lv_anim_set_var(&a, label);
         lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
-        lv_coord_t initial_y = lv_obj_get_user_data(label);
+        lv_coord_t initial_y = (lv_coord_t)lv_obj_get_user_data(label);
         lv_anim_set_values(&a, initial_y-5, initial_y);
         lv_anim_start(&a);
         lv_anim_t a1;

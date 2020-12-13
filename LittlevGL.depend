@@ -11144,7 +11144,7 @@
 	"../lv_misc/lv_debug.h"
 	"../lv_draw/lv_draw_blend.h"
 
-1605430965 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\lvgl\src\lv_font\lv_font.h
+1607598244 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\lvgl\src\lv_font\lv_font.h
 	"../lv_conf_internal.h"
 	<stdint.h>
 	<stddef.h>
@@ -13027,7 +13027,7 @@
 	<stdint.h>
 	<stdlib.h>
 
-1604160312 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_ui.h
+1607607474 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_ui.h
 	"lvgl.h"
 
 1595318120 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_pid_control.c
@@ -13042,15 +13042,15 @@
 1601864894 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_settings.c
 	"reflow_oven_settings.h"
 
-1605383553 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_theme.c
+1607614249 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_theme.c
 	"reflow_oven_theme.h"
 
-1605287270 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_theme.h
+1607603544 c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_theme.h
 	"reflow_oven_ui.h"
 	"scifi_clock.h"
 	"lvgl.h"
 
-1605431263 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_ui.c
+1607616600 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\reflow_oven_ui.c
 	"reflow_oven_ui.h"
 	"reflow_oven_theme.h"
 	"lv_drivers/win_drv.h"
@@ -13194,4 +13194,19 @@
 
 1605433686 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\images\down_96px.c
 	"lvgl/lvgl.h"
+
+1607598210 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\lvgl\src\lv_font\lv_font_eurostyle_bold_26.c
+	"lvgl/lvgl.h"
+
+1607603184 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\images\color_wheel_64px.c
+	"lvgl.h"
+	"../lvgl/lvgl.h"
+
+1607603193 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\images\color_wheel_temp_64px.c
+	"lvgl.h"
+	"../lvgl/lvgl.h"
+
+1607604069 source:c:\users\danny\documents\lv_sim_codeblocks_win_scifi\images\color_wheel_off_64px.c
+	"lvgl.h"
+	"../lvgl/lvgl.h"
 

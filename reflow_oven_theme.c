@@ -310,7 +310,7 @@ static void basic_init(void)
 
     lv_style_init(&style_sw_bg);
     lv_style_set_bg_opa(&style_sw_bg, LV_STATE_DEFAULT, LV_OPA_COVER);
-    lv_style_set_bg_color(&style_sw_bg, LV_STATE_DEFAULT, REFLOW_OVEN_GRAY);
+    lv_style_set_bg_color(&style_sw_bg, LV_STATE_DEFAULT, REFLOW_OVEN_BLUE);
     lv_style_set_radius(&style_sw_bg, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
     lv_style_set_value_color(&style_sw_bg, LV_STATE_DEFAULT, REFLOW_OVEN_BLUE);
 
@@ -329,7 +329,7 @@ static void basic_init(void)
 
     lv_style_init(&style_slider_knob);
     lv_style_set_bg_opa(&style_slider_knob, LV_STATE_DEFAULT, LV_OPA_COVER);
-    lv_style_set_bg_color(&style_slider_knob, LV_STATE_DEFAULT, REFLOW_OVEN_BLUE);
+    lv_style_set_bg_color(&style_slider_knob, LV_STATE_DEFAULT, LV_COLOR_WHITE);
     lv_style_set_radius(&style_slider_knob, LV_STATE_DEFAULT, LV_RADIUS_CIRCLE);
     lv_style_set_pad_top(&style_slider_knob, LV_STATE_DEFAULT, 4);
     lv_style_set_pad_bottom(&style_slider_knob, LV_STATE_DEFAULT, 4);
